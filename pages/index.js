@@ -92,6 +92,37 @@ const CVOptimizer = () => {
     }
   };
 
+  const cleanOptimizedContent = (content) => {
+    // Remove common explanatory phrases that the AI might include
+    const phrasesToRemove = [
+      /^Here's the optimized CV:?\s*/i,
+      /^Here is the optimized CV:?\s*/i,
+      /^I've optimized the following CV:?\s*/i,
+      /^I have optimized the following CV:?\s*/i,
+      /^Below is the optimized CV:?\s*/i,
+      /^The optimized CV is as follows:?\s*/i,
+      /^Optimized CV:?\s*/i,
+      /^Here's your optimized resume:?\s*/i,
+      /^Here is your optimized resume:?\s*/i,
+      /^I've tailored your CV to match the job description:?\s*/i,
+      /^I have tailored your CV to match the job description:?\s*/i,
+      /^Based on the job description, here's your optimized CV:?\s*/i,
+      /^Here's the CV optimized for the job requirements:?\s*/i,
+    ];
+
+    let cleanedContent = content;
+    
+    // Remove explanatory phrases from the beginning
+    phrasesToRemove.forEach(phrase => {
+      cleanedContent = cleanedContent.replace(phrase, '');
+    });
+
+    // Remove any remaining leading/trailing whitespace
+    cleanedContent = cleanedContent.trim();
+
+    return cleanedContent;
+  };
+
   const optimizeCV = async () => {
     if (!cvText || !jobDescription) {
       alert('Please ensure both CV and Job Description are provided');
@@ -112,11 +143,11 @@ const CVOptimizer = () => {
           messages: [
             {
               role: 'system',
-              content: 'You are a professional CV optimizer. Your task is to strategically optimize the given CV to better match the job description requirements. Focus on: 1) Realigning existing experience to highlight relevant skills, 2) Rephrasing accomplishments to match JD keywords, 3) Quantifying achievements where possible, 4) Maintaining authenticity while maximizing relevance. Do not fabricate experience, but creatively present existing experience in the most favorable light for the target role.'
+              content: 'You are a professional CV optimizer. Your task is to strategically optimize the given CV to better match the job description requirements. Focus on: 1) Realigning existing experience to highlight relevant skills, 2) Rephrasing accomplishments to match JD keywords, 3) Quantifying achievements where possible, 4) Maintaining authenticity while maximizing relevance. Do not fabricate experience, but creatively present existing experience in the most favorable light for the target role. IMPORTANT: Return ONLY the optimized CV content without any explanatory text, preamble, or phrases like "Here is the optimized CV" or similar. Start directly with the CV content.'
             },
             {
               role: 'user',
-              content: `Please optimize this CV to better match the job description requirements. Make it compelling but authentic.
+              content: `Please optimize this CV to better match the job description requirements. Make it compelling but authentic. Return only the optimized CV content without any explanatory text.
 
 JOB DESCRIPTION:
 ${jobDescription}
@@ -124,7 +155,7 @@ ${jobDescription}
 CURRENT CV:
 ${cvText}
 
-Please provide an optimized version that maintains the same structure but better aligns with the job requirements. Focus on relevant skills, use similar terminology from the JD, and highlight the most pertinent experiences.`
+Provide the optimized CV that maintains the same structure but better aligns with the job requirements. Focus on relevant skills, use similar terminology from the JD, and highlight the most pertinent experiences. Do not include any explanatory text - return only the CV content.`
             }
           ],
           max_tokens: 2000,
@@ -138,7 +169,8 @@ Please provide an optimized version that maintains the same structure but better
         throw new Error(data.error.message || 'API Error');
       }
       
-      const optimizedContent = data.choices[0].message.content;
+      const rawContent = data.choices[0].message.content;
+      const optimizedContent = cleanOptimizedContent(rawContent);
       setOptimizedCV(optimizedContent);
       setEditableCV(optimizedContent);
       setStep(3);
