@@ -93,32 +93,97 @@ const CVOptimizer = () => {
   };
 
   const cleanOptimizedContent = (content) => {
-    // Remove common explanatory phrases that the AI might include
+    // Split content into lines for processing
+    const lines = content.split('\n');
+    let cleanedLines = [];
+    let skipSection = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Check if this line starts an explanatory section
+      if (
+        line.match(/^I optimized the CV by:?/i) ||
+        line.match(/^I've optimized the CV by:?/i) ||
+        line.match(/^I have optimized the CV by:?/i) ||
+        line.match(/^Here's how I optimized/i) ||
+        line.match(/^The following optimizations were made:?/i) ||
+        line.match(/^Key optimizations:?/i) ||
+        line.match(/^Changes made:?/i) ||
+        line.match(/^Optimizations:?/i) ||
+        line.match(/^Here's the optimized CV:?/i) ||
+        line.match(/^Here is the optimized CV:?/i) ||
+        line.match(/^Below is the optimized CV:?/i) ||
+        line.match(/^The optimized CV is as follows:?/i) ||
+        line.match(/^Optimized CV:?/i) ||
+        line.match(/^Here's your optimized resume:?/i) ||
+        line.match(/^Here is your optimized resume:?/i) ||
+        line.match(/^I've tailored your CV/i) ||
+        line.match(/^I have tailored your CV/i) ||
+        line.match(/^Based on the job description/i)
+      ) {
+        skipSection = true;
+        continue;
+      }
+      
+      // Check if this line is a bullet point about optimizations
+      if (
+        line.match(/^[-*•]\s*(Enhanced|Improved|Added|Highlighted|Emphasized|Repositioned|Reframed|Quantified|Aligned|Tailored|Optimized|Modified|Updated|Strengthened)/i) ||
+        line.match(/^[-*•]\s*[A-Z][a-z]+ (keywords|skills|experience|achievements|accomplishments)/i) ||
+        line.match(/^[-*•]\s*(Keywords|Skills|Experience|Achievements|Accomplishments)/i) ||
+        line.match(/^\d+\.\s*(Enhanced|Improved|Added|Highlighted|Emphasized|Repositioned|Reframed|Quantified|Aligned|Tailored|Optimized|Modified|Updated|Strengthened)/i)
+      ) {
+        continue;
+      }
+      
+      // Check if we've reached the actual CV content (usually starts with a name or professional title)
+      if (skipSection) {
+        // Look for typical CV starting patterns
+        if (
+          line.match(/^[A-Z][a-z]+ [A-Z][a-z]+\s*$/) || // Full name
+          line.match(/^[A-Z][A-Z\s]+$/) || // ALL CAPS name
+          line.match(/^PROFESSIONAL SUMMARY/i) ||
+          line.match(/^SUMMARY/i) ||
+          line.match(/^PROFILE/i) ||
+          line.match(/^EXPERIENCE/i) ||
+          line.match(/^WORK EXPERIENCE/i) ||
+          line.match(/^EDUCATION/i) ||
+          line.match(/^SKILLS/i) ||
+          line.match(/^CONTACT/i) ||
+          line.match(/^EMAIL:/i) ||
+          line.match(/^PHONE:/i) ||
+          line.match(/^[A-Za-z\s]+\s+\|\s+[A-Za-z\s]+/) || // Name | Title format
+          line.match(/^\w+@\w+\.\w+/) || // Email address
+          line.match(/^\+?\d{1,3}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}/) // Phone number
+        ) {
+          skipSection = false;
+          cleanedLines.push(lines[i]); // Keep original formatting
+        }
+      } else {
+        cleanedLines.push(lines[i]); // Keep original formatting
+      }
+    }
+    
+    // Join back and clean up extra whitespace
+    let cleanedContent = cleanedLines.join('\n');
+    
+    // Remove any remaining explanatory phrases at the beginning
     const phrasesToRemove = [
       /^Here's the optimized CV:?\s*/i,
       /^Here is the optimized CV:?\s*/i,
-      /^I've optimized the following CV:?\s*/i,
-      /^I have optimized the following CV:?\s*/i,
       /^Below is the optimized CV:?\s*/i,
       /^The optimized CV is as follows:?\s*/i,
       /^Optimized CV:?\s*/i,
       /^Here's your optimized resume:?\s*/i,
       /^Here is your optimized resume:?\s*/i,
-      /^I've tailored your CV to match the job description:?\s*/i,
-      /^I have tailored your CV to match the job description:?\s*/i,
-      /^Based on the job description, here's your optimized CV:?\s*/i,
-      /^Here's the CV optimized for the job requirements:?\s*/i,
     ];
 
-    let cleanedContent = content;
-    
-    // Remove explanatory phrases from the beginning
     phrasesToRemove.forEach(phrase => {
       cleanedContent = cleanedContent.replace(phrase, '');
     });
 
-    // Remove any remaining leading/trailing whitespace
-    cleanedContent = cleanedContent.trim();
+    // Clean up excessive whitespace
+    cleanedContent = cleanedContent.replace(/\n{3,}/g, '\n\n').trim();
 
     return cleanedContent;
   };
